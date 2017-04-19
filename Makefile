@@ -1,8 +1,5 @@
 .PHONY: force test
 
-CFLAGS += -std=gnu11 -g3
-CFLAGS += -m32
-
 SRC := $(wildcard *.ml) lexer.mll parser.mly opcode.ml cprim.ml
 C := $(addprefix runtime/,main.c compare.c error.c instruct.c io.c main.c prim.c str.c)
 HD := $(addprefix runtime/,common.h error.h instruct.h io.h jumptable.h prim.h str.h value.h)
@@ -10,19 +7,19 @@ CYAN := '\e[1;36m'
 GREEN := '\e[1;32m'
 RST := '\e[0m'
 
-all: camlfwc camlfwod camlfwrun
+all: cc od run
 
-camlfwc: main.byte
+cc: main.byte
 	ln -sf $< $@
 
-camlfwod: objdump.byte
+od: objdump.byte
 	ln -sf $< $@
 
 %.byte: $(SRC)
 	ocamlbuild $@
 	touch $@
 
-camlfwrun: $(C) $(HD)
+run: $(C) $(HD)
 	$(LINK.c) -I runtime $(filter %.c,$^) -o $@
 
 runtime/jumptable.h: runtime/instruct.h
@@ -39,7 +36,7 @@ cprim.ml: runtime/prim.c
 
 test-%: force
 	@echo -e $(CYAN)test $*$(RST)
-	@t=$$(mktemp); ./camlfwc tests/$*.ml -o $$t && ./camlfwrun $$t && echo; r=$$?; $(RM) tests/$*.zo $$t; exit $$r
+	@t=$$(mktemp); ./cc tests/$*.ml -o $$t && ./run $$t && echo; r=$$?; $(RM) tests/$*.zo $$t; exit $$r
 
 #test: $(addprefix test-,$(patsubst tests/%.ml,%,$(wildcard tests/*.ml)))
 test:
